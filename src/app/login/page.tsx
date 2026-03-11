@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Button, Input, Card } from "@/components/ui"
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui"
+import { ROUTES } from "@/constants"
+import { authenticateMockUser, formatRole, getDefaultRouteForRole, MOCK_AUTH_USERS, type MockAuthUser } from "@/lib/auth"
 import { useAuthStore } from "@/stores"
 import { Eye, EyeOff, Bus } from "lucide-react"
 
@@ -29,6 +31,8 @@ const otpSchema = z.object({
 
 type OTPFormData = z.infer<typeof otpSchema>
 
+const DEMO_OTP_CODE = "000000"
+
 export default function LoginPage() {
   const router = useRouter()
   const { login } = useAuthStore()
@@ -36,10 +40,23 @@ export default function LoginPage() {
   const [showOTP, setShowOTP] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
+  const [pendingUserRole, setPendingUserRole] = React.useState<LoginFormData["email"] | null>(null)
+  const [showTestAccounts, setShowTestAccounts] = React.useState(false)
+
+  React.useEffect(() => {
+    void Promise.resolve(useAuthStore.persist.rehydrate()).then(() => {
+      const existingUser = useAuthStore.getState().user
+
+      if (existingUser) {
+        router.replace(getDefaultRouteForRole(existingUser.role))
+      }
+    })
+  }, [router])
 
   const {
     register,
     handleSubmit,
+    setValue: setLoginValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -60,23 +77,24 @@ export default function LoginPage() {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (data.email === "admin@gigm.com" && data.password === "password") {
-        login({
-          id: "1",
-          email: data.email,
-          name: "Admin User",
-          role: "admin",
-          terminalScope: ["lagos-jibowu", "benin", "abuja"],
-          status: "active",
-          twoFactorEnabled: true,
-        })
+
+      const authenticatedUser = authenticateMockUser(data.email, data.password)
+
+      if (authenticatedUser) {
+        login(authenticatedUser)
         
         if (data.rememberMe) {
           localStorage.setItem("gigm-remember", "true")
+        } else {
+          localStorage.removeItem("gigm-remember")
         }
-        
-        setShowOTP(true)
+
+        if (authenticatedUser.twoFactorEnabled) {
+          setPendingUserRole(authenticatedUser.email)
+          setShowOTP(true)
+        } else {
+          router.push(getDefaultRouteForRole(authenticatedUser.role))
+        }
       } else {
         setError("Invalid email or password")
       }
@@ -92,7 +110,27 @@ export default function LoginPage() {
     
     try {
       await new Promise(resolve => setTimeout(resolve, 500))
-      router.push("/dashboard")
+      const enteredCode = otpDigits.join("")
+
+      if (enteredCode.length !== 6) {
+        setError("Enter the full 6-digit code.")
+        return
+      }
+
+      if (enteredCode !== DEMO_OTP_CODE) {
+        setError("Invalid verification code. Use 000000 for demo.")
+        return
+      }
+
+      const activeUser = useAuthStore.getState().user
+
+      if (!activeUser || (pendingUserRole && activeUser.email !== pendingUserRole)) {
+        setError("Session expired. Please sign in again.")
+        router.replace(ROUTES.AUTH.LOGIN)
+        return
+      }
+
+      router.push(getDefaultRouteForRole(activeUser.role))
     } catch {
       setError("Invalid verification code")
     } finally {
@@ -114,6 +152,13 @@ export default function LoginPage() {
       const prevInput = document.getElementById(`otp-${index - 1}`)
       prevInput?.focus()
     }
+  }
+
+  const autofillTestAccount = (email: string, password: string) => {
+    setLoginValue("email", email)
+    setLoginValue("password", password)
+    setLoginValue("rememberMe", true)
+    setError("")
   }
 
   return (
@@ -164,7 +209,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="w-full max-w-md"
+              className="w-full max-w-2xl"
             >
               <div className="lg:hidden flex items-center gap-3 mb-8">
                 <div className="h-12 w-12 rounded-lg bg-brand-green flex items-center justify-center">
@@ -229,6 +274,42 @@ export default function LoginPage() {
                 </Button>
               </form>
 
+              <div className="relative mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowTestAccounts(prev => !prev)}
+                  className="text-sm text-brand-green hover:underline"
+                >
+                  {showTestAccounts ? "Hide frontend test accounts" : "Show frontend test accounts"}
+                </button>
+
+                {showTestAccounts && (
+                  <Card className="absolute left-0 right-0 top-full mt-2 z-20 border-brand-green/20 bg-brand-green-light/30 shadow-lg">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Frontend test accounts</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-64 overflow-y-auto space-y-3 pr-1">
+                      {MOCK_AUTH_USERS.map((account: MockAuthUser) => (
+                        <button
+                          key={account.id}
+                          type="button"
+                          onClick={() => autofillTestAccount(account.email, account.password)}
+                          className="w-full rounded-lg border border-border bg-surface px-3 py-3 text-left hover:border-brand-green hover:bg-white transition-colors"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-dark">{account.email}</p>
+                              <p className="text-xs text-subtle mt-1">Password: {account.password}</p>
+                            </div>
+                            <Badge variant="outline">{formatRole(account.role)}</Badge>
+                          </div>
+                        </button>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
               <p className="mt-8 text-center text-sm text-subtle">
                 Having trouble logging in?{" "}
                 <a href="#" className="text-brand-green hover:underline">
@@ -250,6 +331,7 @@ export default function LoginPage() {
               <p className="text-mid mb-8">
                 Enter the 6-digit code sent to your device
               </p>
+              <p className="text-sm text-subtle mb-6">Demo code: <span className="font-mono text-dark">000000</span></p>
 
               {error && (
                 <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-lg">

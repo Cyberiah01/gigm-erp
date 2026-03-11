@@ -55,6 +55,8 @@ export const ROUTES = {
 } as const
 
 export const PERMISSIONS = {
+  DASHBOARD_VIEW: 'dashboard:view',
+
   // Bookings
   BOOKINGS_VIEW: 'bookings:view',
   BOOKINGS_CREATE: 'bookings:create',
@@ -67,6 +69,10 @@ export const PERMISSIONS = {
   TRIPS_CREATE: 'trips:create',
   TRIPS_EDIT: 'trips:edit',
   TRIPS_DELETE: 'trips:delete',
+
+  // Terminals
+  TERMINALS_VIEW: 'terminals:view',
+  TERMINALS_EDIT: 'terminals:edit',
   
   // Fleet
   FLEET_VIEW: 'fleet:view',
@@ -83,10 +89,22 @@ export const PERMISSIONS = {
   FINANCE_VIEW: 'finance:view',
   FINANCE_APPROVE: 'finance:approve',
   FINANCE_REFUND: 'finance:refund',
+
+  // Logistics
+  LOGISTICS_VIEW: 'logistics:view',
+  LOGISTICS_EDIT: 'logistics:edit',
+
+  // Customers
+  CUSTOMERS_VIEW: 'customers:view',
+  CUSTOMERS_EDIT: 'customers:edit',
   
   // HR
   HR_VIEW: 'hr:view',
   HR_EDIT: 'hr:edit',
+
+  // Portal
+  PORTAL_VIEW: 'portal:view',
+  PORTAL_EDIT: 'portal:edit',
   
   // Users
   USERS_VIEW: 'users:view',
@@ -102,26 +120,55 @@ export const PERMISSIONS = {
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   ceo: Object.values(PERMISSIONS),
   terminal_manager: [
+    PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.BOOKINGS_VIEW,
     PERMISSIONS.BOOKINGS_CREATE,
     PERMISSIONS.BOOKINGS_EDIT,
     PERMISSIONS.TRIPS_VIEW,
     PERMISSIONS.TRIPS_CREATE,
     PERMISSIONS.TRIPS_EDIT,
+    PERMISSIONS.TERMINALS_VIEW,
+    PERMISSIONS.TERMINALS_EDIT,
     PERMISSIONS.FLEET_VIEW,
     PERMISSIONS.DRIVERS_VIEW,
     PERMISSIONS.FINANCE_VIEW,
     PERMISSIONS.HR_VIEW,
+    PERMISSIONS.CUSTOMERS_VIEW,
   ],
   ticketing_agent: [
+    PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.BOOKINGS_VIEW,
     PERMISSIONS.BOOKINGS_CREATE,
+    PERMISSIONS.CUSTOMERS_VIEW,
+    PERMISSIONS.TERMINALS_VIEW,
+  ],
+  driver: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.DRIVERS_VIEW,
   ],
   finance_manager: [
+    PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.FINANCE_VIEW,
     PERMISSIONS.FINANCE_APPROVE,
     PERMISSIONS.FINANCE_REFUND,
     PERMISSIONS.BOOKINGS_VIEW,
+  ],
+  logistics_agent: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.LOGISTICS_VIEW,
+    PERMISSIONS.LOGISTICS_EDIT,
+    PERMISSIONS.TERMINALS_VIEW,
+  ],
+  content_editor: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PORTAL_VIEW,
+    PERMISSIONS.PORTAL_EDIT,
+  ],
+  hr_manager: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.HR_VIEW,
+    PERMISSIONS.HR_EDIT,
+    PERMISSIONS.USERS_VIEW,
   ],
   admin: Object.values(PERMISSIONS),
 }

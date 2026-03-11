@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { canAccessPath } from "@/lib/auth"
 import { useUIStore } from "@/stores"
 import { Avatar } from "@/components/ui"
 import { useAuthStore } from "@/stores"
@@ -94,7 +95,32 @@ export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
   const { user, logout } = useAuthStore()
 
-  const activeNav = navigation.find(
+  const visibleNavigation = React.useMemo(() => {
+    const items = [] as typeof navigation
+    let pendingHeader: (typeof navigation)[number] | null = null
+
+    for (const item of navigation) {
+      if (item.section === "header") {
+        pendingHeader = item
+        continue
+      }
+
+      if (item.href && !canAccessPath(user, item.href)) {
+        continue
+      }
+
+      if (pendingHeader) {
+        items.push(pendingHeader)
+        pendingHeader = null
+      }
+
+      items.push(item)
+    }
+
+    return items
+  }, [user])
+
+  const activeNav = visibleNavigation.find(
     (item) => item.href && pathname.startsWith(item.href)
   )
 
@@ -135,7 +161,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-2">
-          {navigation.map((item, index) => {
+          {visibleNavigation.map((item, index) => {
             if (item.section === "header") {
               return (
                 <li key={item.name} className={cn(

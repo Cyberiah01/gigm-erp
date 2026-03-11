@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ERPLayout } from "@/components/layouts"
 import { Card, Badge, Button, Input, Table, Pagination, Avatar, Modal } from "@/components/ui"
+import { formatRole, MOCK_AUTH_USERS } from "@/lib/auth"
 import { cn, formatDate } from "@/lib/utils"
 import {
   Search,
@@ -14,58 +15,16 @@ import {
   Mail,
 } from "lucide-react"
 
-const mockUsers = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@gigm.com",
-    roles: ["Admin", "Super Admin"],
-    terminalScope: ["All Terminals"],
-    lastLogin: "2026-03-11 09:30",
-    status: "active",
-    twoFactorEnabled: true,
-  },
-  {
-    id: "2",
-    name: "Sarah Adebayo",
-    email: "sarah.adebayo@gigm.com",
-    roles: ["Terminal Manager"],
-    terminalScope: ["Lagos Jibowu"],
-    lastLogin: "2026-03-11 08:15",
-    status: "active",
-    twoFactorEnabled: true,
-  },
-  {
-    id: "3",
-    name: "James Okonkwo",
-    email: "james.okonkwo@gigm.com",
-    roles: ["Ticketing Agent"],
-    terminalScope: ["Lagos Jibowu"],
-    lastLogin: "2026-03-10 16:45",
-    status: "active",
-    twoFactorEnabled: false,
-  },
-  {
-    id: "4",
-    name: "Amina Sani",
-    email: "amina.sani@gigm.com",
-    roles: ["Finance Manager"],
-    terminalScope: ["Abuja", "Lagos"],
-    lastLogin: "2026-03-11 10:00",
-    status: "active",
-    twoFactorEnabled: true,
-  },
-  {
-    id: "5",
-    name: "Former Employee",
-    email: "former@gigm.com",
-    roles: ["Ticketing Agent"],
-    terminalScope: ["Lagos Ojuelegba"],
-    lastLogin: "2026-02-28",
-    status: "inactive",
-    twoFactorEnabled: false,
-  },
-]
+const mockUsers = MOCK_AUTH_USERS.map((user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  roles: [formatRole(user.role)],
+  terminalScope: user.terminalScope?.length ? user.terminalScope : ["All Terminals"],
+  lastLogin: "2026-03-11 09:30",
+  status: user.status,
+  twoFactorEnabled: user.twoFactorEnabled,
+}))
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
